@@ -94,3 +94,4 @@ lib/generated_plugin_registrant.dart
 # Linux related
 **/linux/flutter/generated_plugin_registrant.cc
 **/linux/flutter/generated_plugin_registrant.h
+
