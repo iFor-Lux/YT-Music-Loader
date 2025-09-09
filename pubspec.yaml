@@ -1,0 +1,36 @@
+name: youtube_downloader_app
+description: Aplicación para descargar videos de YouTube en formato MP3
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  http: ^1.1.0
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  path_provider: ^2.1.1
+  permission_handler: ^11.0.1
+  youtube_explode_dart: ^2.1.0
+  cached_network_image: ^3.3.0
+  url_launcher: ^6.2.1
+  image: ^4.1.3
+  path: ^1.8.3
+  file_picker: ^10.3.2
+  glass_kit: ^4.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
