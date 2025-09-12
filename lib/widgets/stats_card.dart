@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_downloader_app/services/download_service.dart';
 
 class StatsCard extends StatelessWidget {
   final String title;

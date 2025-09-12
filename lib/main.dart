@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:youtube_downloader_app/providers/youtube_provider.dart';
 import 'package:youtube_downloader_app/providers/theme_provider.dart';
 import 'package:youtube_downloader_app/services/api_usage_service.dart';
+import 'package:youtube_downloader_app/services/memory_optimization_service.dart';
 import 'package:youtube_downloader_app/screens/home_screen.dart';
 import 'package:youtube_downloader_app/screens/download_screen.dart';
 import 'package:youtube_downloader_app/screens/settings_screen.dart';
+import 'package:youtube_downloader_app/widgets/optimized_background.dart';
 import 'dart:ui';
 
 void main() {
@@ -20,6 +22,9 @@ void main() {
       // Solo imprimir logs importantes
     };
   }
+  
+  // Inicializar servicio de optimización de memoria
+  MemoryOptimizationService().initialize();
   
   runApp(const MyApp());
 }
@@ -46,7 +51,7 @@ class MyApp extends StatelessWidget {
             builder: (context, child) {
               return MediaQuery(
                 data: MediaQuery.of(context).copyWith(
-                  textScaleFactor: 1.0, // Evitar escalado de texto
+                  textScaler: const TextScaler.linear(1.0), // Evitar escalado de texto
                 ),
                 child: child!,
               );
@@ -100,33 +105,16 @@ class _MainScreenState extends State<MainScreen> {
           data: MediaQuery.of(context).copyWith(viewInsets: EdgeInsets.zero),
           child: Scaffold(
             resizeToAvoidBottomInset: false,
-            body: Container(
-            decoration: BoxDecoration(
-              // Forzar color de fondo del tema
-              color: themeProvider.isDarkMode ? Colors.black : Colors.grey[50],
-            ),
-            child: Stack(
+            body: Stack(
               children: [
-                // Background personalizado - FORZAR SU APLICACIÓN
-                if (themeProvider.backgroundImage != null)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: themeProvider.backgroundImage!,
-                          fit: BoxFit.cover,
-                          colorFilter: ColorFilter.mode(
-                            Colors.black.withOpacity(0.4),
-                            BlendMode.darken,
-                          ),
-                        ),
-                      ),
-                    ),
+                // Fondo optimizado
+                OptimizedBackground(
+                  backgroundImage: themeProvider.backgroundImage,
+                  isDarkMode: themeProvider.isDarkMode,
+                  child: IndexedStack(
+                    index: _currentIndex,
+                    children: _screens,
                   ),
-                // Contenido principal
-                IndexedStack(
-                  index: _currentIndex,
-                  children: _screens,
                 ),
                 // Navbar flotante con glassmorphing optimizado
                 Positioned(
@@ -145,22 +133,22 @@ class _MainScreenState extends State<MainScreen> {
                             end: Alignment.bottomRight,
                             colors: themeProvider.isDarkMode 
                                 ? [
-                                    Colors.black.withOpacity(0.6),
-                                    Colors.black.withOpacity(0.4),
+                                    Colors.black.withValues(alpha: 0.6),
+                                    Colors.black.withValues(alpha: 0.4),
                                   ]
                                 : [
-                                    Colors.white.withOpacity(0.7),
-                                    Colors.white.withOpacity(0.5),
+                                    Colors.white.withValues(alpha: 0.7),
+                                    Colors.white.withValues(alpha: 0.5),
                                   ],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
@@ -201,7 +189,6 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ],
             ),
-            ),
           ),
         );
       },
@@ -228,8 +215,8 @@ class _MainScreenState extends State<MainScreen> {
           });
         },
         borderRadius: BorderRadius.circular(12),
-        splashColor: (themeProvider.isDarkMode ? Colors.red[300] : Colors.red[600])?.withOpacity(0.1),
-        highlightColor: (themeProvider.isDarkMode ? Colors.red[300] : Colors.red[600])?.withOpacity(0.05),
+        splashColor: (themeProvider.isDarkMode ? Colors.red[300] : Colors.red[600])?.withValues(alpha: 0.1),
+        highlightColor: (themeProvider.isDarkMode ? Colors.red[300] : Colors.red[600])?.withValues(alpha: 0.05),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           child: Column(

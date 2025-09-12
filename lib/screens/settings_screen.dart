@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:youtube_downloader_app/providers/youtube_provider.dart';
 import 'package:youtube_downloader_app/providers/theme_provider.dart';
-import 'package:youtube_downloader_app/services/download_service.dart';
+import 'package:youtube_downloader_app/services/enhanced_download_service.dart';
 import 'package:youtube_downloader_app/services/api_usage_service.dart';
 import 'package:youtube_downloader_app/screens/api_metrics_screen.dart';
+import 'package:youtube_downloader_app/widgets/glassmorph_card.dart';
+import 'package:youtube_downloader_app/widgets/no_bounce_scroll_behavior.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'dart:ui';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,7 +18,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   String? _selectedDirectory;
-  List<String> _availableDirectories = [];
   bool _isLoading = false;
   bool _downloadWithCover = true;
   bool _downloadWithLyrics = false;
@@ -52,19 +51,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
-      final directory = await DownloadService.getDownloadDirectory();
-      final directories = await DownloadService.getAvailableDirectories();
-      final withCover = await DownloadService.getDownloadWithCover();
-      final withLyrics = await DownloadService.getDownloadWithLyrics();
-      final quality = await DownloadService.getDownloadQuality();
-      final maxDownloads = await DownloadService.getMaxConcurrentDownloads();
-      final autoStart = await DownloadService.getAutoStartDownloads();
-      final notifications = await DownloadService.getShowNotifications();
-      final keepScreenOn = await DownloadService.getKeepScreenOn();
+      final directory = await EnhancedDownloadService.getDownloadDirectory();
+      final withCover = await EnhancedDownloadService.getDownloadWithCover();
+      final withLyrics = await EnhancedDownloadService.getDownloadWithLyrics();
+      final quality = await EnhancedDownloadService.getDownloadQuality();
+      final maxDownloads = await EnhancedDownloadService.getMaxConcurrentDownloads();
+      final autoStart = await EnhancedDownloadService.getAutoStartDownloads();
+      final notifications = await EnhancedDownloadService.getShowNotifications();
+      final keepScreenOn = await EnhancedDownloadService.getKeepScreenOn();
 
       setState(() {
         _selectedDirectory = directory;
-        _availableDirectories = directories;
         _downloadWithCover = withCover;
         _downloadWithLyrics = withLyrics;
         _downloadQuality = quality;
@@ -168,67 +165,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSimpleHeader(ThemeProvider themeProvider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: themeProvider.isDarkMode
-                    ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
-                      ]
-                    : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.settings,
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Configuraciones',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
-              ],
+    return GlassmorphHeader(
+      isDarkMode: themeProvider.isDarkMode,
+      child: Row(
+        children: [
+          Icon(
+            Icons.settings,
+            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Configuraciones',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: themeProvider.isDarkMode ? Colors.white : Colors.black,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildOptimizedContent(ThemeProvider themeProvider) {
-    return ListView.builder(
-      physics: const BouncingScrollPhysics(), // Física más fluida
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100), // Padding bottom para el navbar
+    return NoBounceListViewBuilder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
       itemCount: 7,
+      cacheExtent: 200,
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
+      addSemanticIndexes: false,
       itemBuilder: (context, index) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: _buildSimpleCard(themeProvider, index),
+          child: RepaintBoundary(
+            key: ValueKey('settings_card_$index'),
+            child: _buildSimpleCard(themeProvider, index),
+          ),
         );
       },
     );
@@ -271,7 +245,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           value: themeProvider.isDarkMode,
           onChanged: (value) => themeProvider.toggleDarkMode(),
-          activeColor: Colors.blue,
+          activeThumbColor: Colors.blue,
         ),
         const Divider(),
         ListTile(
@@ -339,9 +313,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           subtitle: Text(
-            _selectedDirectory ?? 'No seleccionado',
+            _selectedDirectory ?? 'Usando ubicación por defecto',
             style: TextStyle(
               color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+              fontSize: 12,
             ),
           ),
           trailing: IconButton(
@@ -401,9 +376,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: _downloadWithCover,
           onChanged: (value) {
             setState(() => _downloadWithCover = value);
-            DownloadService.setDownloadWithCover(_downloadWithCover);
+            EnhancedDownloadService.setDownloadWithCover(_downloadWithCover);
           },
-          activeColor: Colors.blue,
+          activeThumbColor: Colors.blue,
         ),
         const Divider(),
         SwitchListTile(
@@ -423,9 +398,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: _downloadWithLyrics,
           onChanged: (value) {
             setState(() => _downloadWithLyrics = value);
-            DownloadService.setDownloadWithLyrics(_downloadWithLyrics);
+            EnhancedDownloadService.setDownloadWithLyrics(_downloadWithLyrics);
           },
-          activeColor: Colors.blue,
+          activeThumbColor: Colors.blue,
         ),
         const Divider(),
         ListTile(
@@ -540,9 +515,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: _autoStartDownloads,
           onChanged: (value) {
             setState(() => _autoStartDownloads = value);
-            DownloadService.setAutoStartDownloads(_autoStartDownloads);
+            EnhancedDownloadService.setAutoStartDownloads(_autoStartDownloads);
           },
-          activeColor: Colors.blue,
+          activeThumbColor: Colors.blue,
         ),
         const Divider(),
         SwitchListTile(
@@ -562,9 +537,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: _keepScreenOn,
           onChanged: (value) {
             setState(() => _keepScreenOn = value);
-            DownloadService.setKeepScreenOn(_keepScreenOn);
+            EnhancedDownloadService.setKeepScreenOn(_keepScreenOn);
           },
-          activeColor: Colors.blue,
+          activeThumbColor: Colors.blue,
         ),
       ],
     );
@@ -600,8 +575,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             filled: true,
             fillColor: themeProvider.isDarkMode
-                ? Colors.grey[900]?.withOpacity(0.5)
-                : Colors.grey[100]?.withOpacity(0.5),
+                ? Colors.grey[900]?.withValues(alpha: 0.5)
+                : Colors.grey[100]?.withValues(alpha: 0.5),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             suffixIcon: (_apiKeyController.text.isNotEmpty)
                 ? IconButton(
@@ -701,9 +676,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           value: _showNotifications,
           onChanged: (value) {
             setState(() => _showNotifications = value);
-            DownloadService.setShowNotifications(_showNotifications);
+            EnhancedDownloadService.setShowNotifications(_showNotifications);
           },
-          activeColor: Colors.blue,
+          activeThumbColor: Colors.blue,
         ),
       ],
     );
@@ -731,69 +706,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildCard(ThemeProvider themeProvider, String title, IconData icon, List<Widget> children) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: themeProvider.isDarkMode
-                  ? [
-                      Colors.black.withOpacity(0.6),
-                      Colors.black.withOpacity(0.4),
-                    ]
-                  : [
-                      Colors.white.withOpacity(0.7),
-                      Colors.white.withOpacity(0.5),
-                    ],
-            ),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+    return GlassmorphConfigCard(
+      isDarkMode: themeProvider.isDarkMode,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Título e icono
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                ),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Título e icono
-                Row(
-                  children: [
-                    Icon(
-                      icon,
-                      color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                ...children,
-              ],
-            ),
-          ),
-        ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
       ),
     );
   }
@@ -841,43 +780,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showQualityDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Seleccionar Calidad'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('Mejor calidad'),
-              value: 'best',
-              groupValue: _downloadQuality,
-              onChanged: (value) => _setDownloadQuality(value!),
-            ),
-            RadioListTile<String>(
-              title: const Text('Alta calidad'),
-              value: 'high',
-              groupValue: _downloadQuality,
-              onChanged: (value) => _setDownloadQuality(value!),
-            ),
-            RadioListTile<String>(
-              title: const Text('Calidad media'),
-              value: 'medium',
-              groupValue: _downloadQuality,
-              onChanged: (value) => _setDownloadQuality(value!),
-            ),
-            RadioListTile<String>(
-              title: const Text('Baja calidad'),
-              value: 'low',
-              groupValue: _downloadQuality,
-              onChanged: (value) => _setDownloadQuality(value!),
-            ),
-          ],
-        ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Seleccionar Calidad'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String>(
+                title: const Text('Mejor calidad'),
+                value: 'best',
+                groupValue: _downloadQuality,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _downloadQuality = value;
+                    });
+                    _setDownloadQuality(value);
+                  }
+                },
+              ),
+              RadioListTile<String>(
+                title: const Text('Alta calidad'),
+                value: 'high',
+                groupValue: _downloadQuality,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _downloadQuality = value;
+                    });
+                    _setDownloadQuality(value);
+                  }
+                },
+              ),
+              RadioListTile<String>(
+                title: const Text('Calidad media'),
+                value: 'medium',
+                groupValue: _downloadQuality,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _downloadQuality = value;
+                    });
+                    _setDownloadQuality(value);
+                  }
+                },
+              ),
+              RadioListTile<String>(
+                title: const Text('Baja calidad'),
+                value: 'low',
+                groupValue: _downloadQuality,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _downloadQuality = value;
+                    });
+                    _setDownloadQuality(value);
+                  }
+                },
+              ),
+            ],
+          ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cerrar'),
           ),
         ],
+        ),
       ),
     );
   }
@@ -886,7 +855,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _downloadQuality = quality;
     });
-    DownloadService.setDownloadQuality(quality);
+    EnhancedDownloadService.setDownloadQuality(quality);
     Navigator.of(context).pop();
   }
 
@@ -894,7 +863,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _maxConcurrentDownloads = value;
     });
-    DownloadService.setMaxConcurrentDownloads(value);
+    EnhancedDownloadService.setMaxConcurrentDownloads(value);
   }
 
   void _selectDirectory() async {
@@ -903,7 +872,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _selectedDirectory = directory;
       });
-      await DownloadService.setDownloadDirectory(directory);
+      await EnhancedDownloadService.setDownloadDirectory(directory);
     }
   }
 }

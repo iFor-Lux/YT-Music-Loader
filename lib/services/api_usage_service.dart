@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
@@ -78,13 +77,13 @@ class ApiUsageService extends ChangeNotifier {
     _dailyUsage['total'] = (_dailyUsage['total'] ?? 0) + units;
     
     // Debug: mostrar el uso registrado
-    print('[API Usage] $operation: +$units units, total: ${_dailyUsage['total']}');
+    // print('[API Usage] $operation: +$units units, total: ${_dailyUsage['total']}');
     
     await _saveUsageData();
     
     // Verificar si está cerca del límite
     if (isNearLimit && !isOverLimit) {
-      print('[API Usage] Near limit: ${_dailyUsage['total']}/$_dailyQuotaLimit');
+      // print('[API Usage] Near limit: ${_dailyUsage['total']}/$_dailyQuotaLimit');
       _showUsageAlert();
     }
   }
@@ -163,7 +162,7 @@ class ApiUsageService extends ChangeNotifier {
 
   // Mostrar alerta de uso
   void _showUsageAlert() {
-    print('⚠️ API Usage Alert: ${usagePercentage.toStringAsFixed(1)}% used');
+    // print('⚠️ API Usage Alert: ${usagePercentage.toStringAsFixed(1)}% used');
     
     if (_globalContext != null && _globalContext!.mounted) {
       ScaffoldMessenger.of(_globalContext!).showSnackBar(

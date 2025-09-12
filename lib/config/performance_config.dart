@@ -1,36 +1,33 @@
+/// Configuración de rendimiento para la aplicación
 class PerformanceConfig {
-  // Configuraciones de scroll
-  static const double scrollCacheExtent = 500.0;
-  static const bool addAutomaticKeepAlives = false;
-  static const bool addRepaintBoundaries = true;
-  static const bool addSemanticIndexes = false;
+  // Configuración de ListView
+  static const int defaultCacheExtent = 200;
+  static const int reducedCacheExtent = 150;
+  static const int minimalCacheExtent = 100;
   
-  // Configuraciones de animaciones
-  static const int animationDurationMs = 100; // Reducido de 150
-  static const String animationCurve = 'easeOut';
+  // Configuración de imágenes
+  static const int defaultImageCacheSize = 100;
+  static const int lowMemoryImageCacheSize = 50;
+  static const int minimalImageCacheSize = 25;
   
-  // Configuraciones de BackdropFilter
-  static const double backdropBlurSigma = 10.0; // Reducido de 20
-  static const double backdropBlurSigmaLight = 5.0; // Para elementos ligeros
+  // Configuración de glassmorphing
+  static const double defaultBlurSigma = 8.0;
+  static const double reducedBlurSigma = 6.0;
+  static const double minimalBlurSigma = 4.0;
   
-  // Configuraciones de imágenes
-  static const int imageCacheWidth = 140;
-  static const int imageCacheHeight = 100;
-  static const int imageMemCacheWidth = 140;
-  static const int imageMemCacheHeight = 100;
+  // Configuración de animaciones
+  static const Duration defaultAnimationDuration = Duration(milliseconds: 300);
+  static const Duration fastAnimationDuration = Duration(milliseconds: 200);
+  static const Duration minimalAnimationDuration = Duration(milliseconds: 150);
   
-  // Configuraciones de lista
-  static const int listItemHeight = 100;
-  static const double listItemMargin = 6.0;
+  // Configuración de memoria
+  static const int memoryCleanupIntervalMinutes = 2;
+  static const int performanceMonitorIntervalSeconds = 30;
+  static const double lowMemoryThreshold = 0.8;
   
-  // Configuraciones de debounce
-  static const int searchDebounceMs = 1000;
-  
-  // Configuraciones de timeout
-  static const int apiTimeoutSeconds = 30;
-  static const int lyricsTimeoutSeconds = 10;
-  
-  // Configuraciones de reintentos
-  static const int maxRetryAttempts = 3;
-  static const int retryDelaySeconds = 2;
+  // Configuración de scroll
+  static const bool enableScrollPhysics = true;
+  static const bool enableRepaintBoundaries = true;
+  static const bool enableAutomaticKeepAlives = false;
+  static const bool enableSemanticIndexes = false;
 }

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:youtube_downloader_app/providers/youtube_provider.dart';
 import 'package:youtube_downloader_app/providers/theme_provider.dart';
 import 'package:youtube_downloader_app/models/youtube_video.dart';
 import 'package:youtube_downloader_app/services/api_usage_service.dart';
 import 'package:youtube_downloader_app/widgets/optimized_video_card.dart';
+import 'package:youtube_downloader_app/widgets/glassmorph_card.dart';
+import 'package:youtube_downloader_app/widgets/no_bounce_scroll_behavior.dart';
 import 'dart:async';
-import 'dart:ui';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToDownloads;
@@ -124,30 +126,36 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context, provider, child) {
               if (provider.selectedVideos.isEmpty) return const SizedBox.shrink();
               
-              return FloatingActionButton.extended(
-                onPressed: () {
-                  provider.downloadSelectedVideos();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${provider.selectedVideos.length} videos agregados a la cola'),
-                      backgroundColor: Colors.green,
-                      duration: const Duration(seconds: 2),
-                      action: SnackBarAction(
-                        label: 'Ver descargas',
-                        textColor: Colors.white,
-                        onPressed: () {
-                          if (widget.onNavigateToDownloads != null) {
-                            widget.onNavigateToDownloads!();
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                },
-                backgroundColor: Colors.red[600],
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.download, size: 24),
-                label: const Text('Descargar'),
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 100, left: 20), // Un poco más arriba
+                  child: FloatingActionButton.extended(
+                    onPressed: () {
+                      provider.downloadSelectedVideos();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${provider.selectedVideos.length} videos agregados a la cola'),
+                          backgroundColor: Colors.green,
+                          duration: const Duration(seconds: 2),
+                          action: SnackBarAction(
+                            label: 'Ver descargas',
+                            textColor: Colors.white,
+                            onPressed: () {
+                              if (widget.onNavigateToDownloads != null) {
+                                widget.onNavigateToDownloads!();
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    backgroundColor: Colors.red[600],
+                    foregroundColor: Colors.white,
+                    icon: const Icon(Icons.download, size: 24),
+                    label: const Text('Descargar'),
+                  ),
+                ),
               );
             },
           ),
@@ -157,147 +165,90 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSimpleHeader(ThemeProvider themeProvider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: themeProvider.isDarkMode 
-                    ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
-                      ]
-                    : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.home,
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Inicio',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
-                const Spacer(),
-                Consumer<YouTubeProvider>(
-                  builder: (context, provider, child) {
-                    if (provider.selectedVideos.isNotEmpty) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.red[600],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '${provider.selectedVideos.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ],
+    return GlassmorphHeader(
+      isDarkMode: themeProvider.isDarkMode,
+      child: Row(
+        children: [
+          Icon(
+            Icons.home,
+            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Inicio',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: themeProvider.isDarkMode ? Colors.white : Colors.black,
             ),
           ),
-        ),
+          const Spacer(),
+          Consumer<YouTubeProvider>(
+            builder: (context, provider, child) {
+              if (provider.selectedVideos.isNotEmpty) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red[600],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${provider.selectedVideos.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSimpleSearchBar(ThemeProvider themeProvider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: themeProvider.isDarkMode 
-                    ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
-                      ]
-                    : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
-              ),
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              onSubmitted: (value) {
-                _debounceTimer?.cancel();
-                if (value.trim().isNotEmpty) {
-                  context.read<YouTubeProvider>().searchVideos(value.trim());
-                }
-              },
-              style: TextStyle(
-                color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                fontSize: 16,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Buscar videos de YouTube...',
-                hintStyle: TextStyle(
-                  color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[500],
-                  fontSize: 16,
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  size: 20,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                suffixIcon: IconButton(
-                  onPressed: () {
-                    _searchController.clear();
-                    _onSearchChanged('');
-                    context.read<YouTubeProvider>().clearResults();
-                  },
-                  icon: Icon(
-                    Icons.clear,
-                    color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-              ),
+    return GlassmorphHeader(
+      isDarkMode: themeProvider.isDarkMode,
+      child: TextField(
+        controller: _searchController,
+        onChanged: _onSearchChanged,
+        onSubmitted: (value) {
+          _debounceTimer?.cancel();
+          if (value.trim().isNotEmpty) {
+            context.read<YouTubeProvider>().searchVideos(value.trim());
+          }
+        },
+        style: TextStyle(
+          color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+          fontSize: 16,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Buscar videos de YouTube...',
+          hintStyle: TextStyle(
+            color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[500],
+            fontSize: 16,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            size: 20,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          suffixIcon: IconButton(
+            onPressed: () {
+              _searchController.clear();
+              _onSearchChanged('');
+              context.read<YouTubeProvider>().clearResults();
+            },
+            icon: Icon(
+              Icons.clear,
+              color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
         ),
@@ -415,17 +366,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             end: Alignment.bottomRight,
                             colors: themeProvider.isDarkMode 
                                 ? [
-                                    Colors.black.withOpacity(0.6),
-                                    Colors.black.withOpacity(0.4),
+                                    Colors.black.withValues(alpha:0.6),
+                                    Colors.black.withValues(alpha:0.4),
                                   ]
                                 : [
-                                    Colors.white.withOpacity(0.7),
-                                    Colors.white.withOpacity(0.5),
+                                    Colors.white.withValues(alpha:0.7),
+                                    Colors.white.withValues(alpha:0.5),
                                   ],
                           ),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha:0.2),
                             width: 1.5,
                           ),
                         ),
@@ -480,73 +431,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSelectionBar(YouTubeProvider provider, ThemeProvider themeProvider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: themeProvider.isDarkMode 
-                    ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
-                      ]
-                    : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: provider.selectedVideos.isNotEmpty
-                ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: provider.selectAllVideos,
-                          icon: const Icon(Icons.select_all, size: 22),
-                          label: const Text('Seleccionar todo'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[600],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: provider.deselectAllVideos,
-                          icon: const Icon(Icons.clear, size: 22),
-                          label: const Text('Limpiar'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[600],
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : ElevatedButton.icon(
+    return provider.selectedVideos.isNotEmpty
+        ? Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
                     onPressed: provider.selectAllVideos,
                     icon: const Icon(Icons.select_all, size: 22),
-                    label: const Text('Seleccionar todos los videos'),
+                    label: const Text('Seleccionar todo'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[600],
                       foregroundColor: Colors.white,
@@ -555,47 +450,92 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOptimizedVideoList(YouTubeProvider provider, List<YouTubeVideo> videos, ThemeProvider themeProvider) {
-    return ListView.builder(
-      controller: _scrollController,
-      physics: const BouncingScrollPhysics(), // Física más fluida
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      itemCount: videos.length + (provider.hasMoreVideos ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index == videos.length && provider.hasMoreVideos) {
-          return Container(
-            padding: const EdgeInsets.all(16),
-            child: Center(
-              child: Column(
-                children: [
-                  if (provider.isLoadingMore)
-                    CircularProgressIndicator(
-                      color: themeProvider.isDarkMode ? Colors.red[400] : Colors.red[600],
-                    )
-                  else
-                    Icon(
-                      Icons.keyboard_arrow_down,
-                      color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      size: 24,
-                    ),
-                  const SizedBox(height: 8),
-                  Text(
-                    provider.isLoadingMore ? 'Cargando más videos...' : 'Desliza para más',
-                    style: TextStyle(
-                      color: themeProvider.isDarkMode ? Colors.grey[300] : Colors.grey[600],
-                      fontSize: 14,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: provider.deselectAllVideos,
+                    icon: const Icon(Icons.clear, size: 22),
+                    label: const Text('Limpiar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[600],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          )
+        : Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: themeProvider.isDarkMode 
+                          ? [
+                              Colors.grey[900]!.withValues(alpha: 0.8),
+                              Colors.grey[800]!.withValues(alpha: 0.6),
+                            ]
+                          : [
+                              Colors.white.withValues(alpha: 0.9),
+                              Colors.white.withValues(alpha: 0.7),
+                            ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: provider.selectAllVideos,
+                    icon: const Icon(Icons.select_all, size: 22),
+                    label: const Text('Seleccionar todos los videos'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           );
+  }
+
+  Widget _buildOptimizedVideoList(YouTubeProvider provider, List<YouTubeVideo> videos, ThemeProvider themeProvider) {
+    return NoBounceListViewBuilder(
+      controller: _scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      itemCount: videos.length + (provider.hasMoreVideos ? 1 : 0),
+      cacheExtent: 200,
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
+      addSemanticIndexes: false,
+      itemBuilder: (context, index) {
+        if (index == videos.length && provider.hasMoreVideos) {
+          return _buildLoadingIndicator(provider, themeProvider);
         }
 
         final video = videos[index];
@@ -604,12 +544,44 @@ class _HomeScreenState extends State<HomeScreen> {
         return Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: OptimizedVideoCard(
+            key: ValueKey(video.id),
             video: video,
             isSelected: isSelected,
             provider: provider,
           ),
         );
       },
+    );
+  }
+
+  // Widget separado para el indicador de carga (optimización)
+  Widget _buildLoadingIndicator(YouTubeProvider provider, ThemeProvider themeProvider) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Center(
+        child: Column(
+          children: [
+            if (provider.isLoadingMore)
+              CircularProgressIndicator(
+                color: themeProvider.isDarkMode ? Colors.red[400] : Colors.red[600],
+              )
+            else
+              Icon(
+                Icons.keyboard_arrow_down,
+                color: themeProvider.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                size: 24,
+              ),
+            const SizedBox(height: 8),
+            Text(
+              provider.isLoadingMore ? 'Cargando más videos...' : 'Desliza para más',
+              style: TextStyle(
+                color: themeProvider.isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

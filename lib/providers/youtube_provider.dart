@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:youtube_downloader_app/models/youtube_video.dart';
 import 'package:youtube_downloader_app/services/youtube_service.dart';
-import 'package:youtube_downloader_app/services/download_service.dart';
+import 'package:youtube_downloader_app/services/enhanced_download_service.dart';
 import 'dart:async';
 
 enum DownloadStatus { pending, downloading, completed, failed }
@@ -70,30 +70,22 @@ class YouTubeProvider extends ChangeNotifier {
   List<DownloadTask>? _cachedFailedTasks;
   
   List<DownloadTask> get pendingTasks {
-    if (_cachedPendingTasks == null) {
-      _cachedPendingTasks = _downloadTasks.where((t) => t.status == DownloadStatus.pending).toList();
-    }
+    _cachedPendingTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.pending).toList();
     return _cachedPendingTasks!;
   }
   
   List<DownloadTask> get downloadingTasks {
-    if (_cachedDownloadingTasks == null) {
-      _cachedDownloadingTasks = _downloadTasks.where((t) => t.status == DownloadStatus.downloading).toList();
-    }
+    _cachedDownloadingTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.downloading).toList();
     return _cachedDownloadingTasks!;
   }
   
   List<DownloadTask> get completedTasks {
-    if (_cachedCompletedTasks == null) {
-      _cachedCompletedTasks = _downloadTasks.where((t) => t.status == DownloadStatus.completed).toList();
-    }
+    _cachedCompletedTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.completed).toList();
     return _cachedCompletedTasks!;
   }
   
   List<DownloadTask> get failedTasks {
-    if (_cachedFailedTasks == null) {
-      _cachedFailedTasks = _downloadTasks.where((t) => t.status == DownloadStatus.failed).toList();
-    }
+    _cachedFailedTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.failed).toList();
     return _cachedFailedTasks!;
   }
 
@@ -110,7 +102,19 @@ class YouTubeProvider extends ChangeNotifier {
     _cachedFailedTasks = null;
   }
 
-  YouTubeProvider();
+
+  YouTubeProvider() {
+    _requestInitialPermissions();
+  }
+
+  // SOLICITAR PERMISOS AL INICIO
+  Future<void> _requestInitialPermissions() async {
+    try {
+      await EnhancedDownloadService.requestPermissions();
+    } catch (e) {
+      // ignore: empty_catches
+    }
+  }
 
 
   // BÚSQUEDA DE VIDEOS
@@ -140,7 +144,7 @@ class YouTubeProvider extends ChangeNotifier {
       // Solo notificar una vez al inicio
       notifyListeners();
 
-      final videos = await _youtubeService.searchVideos(query);
+      final videos = await _youtubeService.searchVideos(query, maxResults: 20);
       
       _allVideos.clear();
       _allVideos.addAll(videos);
@@ -172,6 +176,7 @@ class YouTubeProvider extends ChangeNotifier {
       if (_nextPageToken != null) {
         final moreVideos = await _youtubeService.searchVideos(
           _currentSearchQuery!, // Usar el query original guardado
+          maxResults: 20,
           pageToken: _nextPageToken,
         );
         
@@ -258,6 +263,14 @@ class YouTubeProvider extends ChangeNotifier {
       return;
     }
 
+    // Verificar permisos antes de descargar
+    final hasPermission = await EnhancedDownloadService.requestPermissions();
+    if (!hasPermission) {
+      _error = 'Permisos de almacenamiento requeridos para descargar videos';
+      notifyListeners();
+      return;
+    }
+
     final task = DownloadTask(video: video);
     _downloadTasks.add(task);
     _clearCache(); // Limpiar cache
@@ -289,6 +302,14 @@ class YouTubeProvider extends ChangeNotifier {
 
   // DESCARGAR VIDEOS SELECCIONADOS
   Future<void> downloadSelectedVideos() async {
+    // Verificar permisos antes de descargar
+    final hasPermission = await EnhancedDownloadService.requestPermissions();
+    if (!hasPermission) {
+      _error = 'Permisos de almacenamiento requeridos para descargar videos';
+      notifyListeners();
+      return;
+    }
+
     addSelectedVideosToDownloadQueue();
     
     final pendingTasks = _downloadTasks.where((task) => task.status == DownloadStatus.pending).toList();
@@ -336,8 +357,8 @@ class YouTubeProvider extends ChangeNotifier {
       }
 
       // Obtener configuración de descarga
-      final downloadWithCover = await DownloadService.getDownloadWithCover();
-      final downloadWithLyrics = await DownloadService.getDownloadWithLyrics();
+      final downloadWithCover = await EnhancedDownloadService.getDownloadWithCover();
+      final downloadWithLyrics = await EnhancedDownloadService.getDownloadWithLyrics();
 
       // Buscar letras sincronizadas si está habilitado (en paralelo)
       String? lyrics;
@@ -350,14 +371,14 @@ class YouTubeProvider extends ChangeNotifier {
         }
       }
 
-      final progressSubscription = DownloadService.getDownloadProgress(task.video.id).listen(
+      final progressSubscription = EnhancedDownloadService.getDownloadProgress(task.video.id).listen(
         (progress) {
           task.progress = progress;
           notifyListeners();
         },
       );
 
-      final success = await DownloadService.downloadAudio(
+      final success = await EnhancedDownloadService.downloadAudio(
         audioUrl,
         task.video.title,
         task.video.id,
@@ -372,7 +393,14 @@ class YouTubeProvider extends ChangeNotifier {
         task.progress = 1.0;
       } else {
         task.status = DownloadStatus.failed;
-        task.error = DownloadService.getDownloadError(task.video.id) ?? 'Error desconocido';
+        final error = EnhancedDownloadService.getDownloadError(task.video.id) ?? 'Error desconocido';
+        
+        // Verificar si es un error de permisos
+        if (error.contains('Permisos de almacenamiento') || error.contains('permanentemente denegados')) {
+          task.error = 'Error de permisos: $error';
+        } else {
+          task.error = error;
+        }
       }
 
       notifyListeners();
@@ -411,9 +439,6 @@ class YouTubeProvider extends ChangeNotifier {
       final cleanArtist = _cleanArtistForSearch(artist);
       
       
-      // Buscar letras usando la API de Musixmatch (gratuita)
-      final searchUrl = 'https://api.musixmatch.com/ws/1.1/matcher.lyrics.get?q_track=${Uri.encodeComponent(cleanTitle)}&q_artist=${Uri.encodeComponent(cleanArtist)}&apikey=YOUR_API_KEY';
-      
       // Generar letras estructuradas para archivo .lrc
       final structuredLyrics = _generateStructuredLyrics(cleanTitle, cleanArtist);
       
@@ -435,8 +460,6 @@ class YouTubeProvider extends ChangeNotifier {
     
     // Limpiar palabras para letras más naturales
     final cleanWords = words.map((word) => word.toLowerCase()).toList();
-    final mainWord = cleanWords.first;
-    final secondaryWord = cleanWords.length > 1 ? cleanWords[1] : mainWord;
     
     // Crear letras estructuradas sin etiquetas de sección (para .lrc)
     final intro = _createIntro(cleanWords);
@@ -479,11 +502,10 @@ $secondaryWord, $secondaryWord
   // CREAR VERSO
   String _createVerse(List<String> words, String emotion, String bodyPart) {
     final mainWord = words.first;
-    final secondaryWord = words.length > 1 ? words[1] : mainWord;
     
     return '''
 I'm $emotion about you, $mainWord
-My $bodyPart beats for you, $secondaryWord
+My $bodyPart beats for you, $mainWord
 Every night I think of you
 $mainWord, you make my dreams come true
 ''';

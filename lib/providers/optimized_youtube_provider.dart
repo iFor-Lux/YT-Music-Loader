@@ -83,30 +83,22 @@ class OptimizedYouTubeProvider extends ChangeNotifier {
   bool get hasMoreVideos => _hasMoreVideos;
   
   List<DownloadTask> get pendingTasks {
-    if (_cachedPendingTasks == null) {
-      _cachedPendingTasks = _downloadTasks.where((t) => t.status == DownloadStatus.pending).toList();
-    }
+    _cachedPendingTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.pending).toList();
     return _cachedPendingTasks!;
   }
   
   List<DownloadTask> get downloadingTasks {
-    if (_cachedDownloadingTasks == null) {
-      _cachedDownloadingTasks = _downloadTasks.where((t) => t.status == DownloadStatus.downloading).toList();
-    }
+    _cachedDownloadingTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.downloading).toList();
     return _cachedDownloadingTasks!;
   }
   
   List<DownloadTask> get completedTasks {
-    if (_cachedCompletedTasks == null) {
-      _cachedCompletedTasks = _downloadTasks.where((t) => t.status == DownloadStatus.completed).toList();
-    }
+    _cachedCompletedTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.completed).toList();
     return _cachedCompletedTasks!;
   }
   
   List<DownloadTask> get failedTasks {
-    if (_cachedFailedTasks == null) {
-      _cachedFailedTasks = _downloadTasks.where((t) => t.status == DownloadStatus.failed).toList();
-    }
+    _cachedFailedTasks ??= _downloadTasks.where((t) => t.status == DownloadStatus.failed).toList();
     return _cachedFailedTasks!;
   }
 
@@ -501,8 +493,6 @@ class OptimizedYouTubeProvider extends ChangeNotifier {
     
     // Limpiar palabras para letras más naturales
     final cleanWords = words.map((word) => word.toLowerCase()).toList();
-    final mainWord = cleanWords.first;
-    final secondaryWord = cleanWords.length > 1 ? cleanWords[1] : mainWord;
     
     // Crear letras estructuradas sin etiquetas de sección (para .lrc)
     final intro = _createIntro(cleanWords);

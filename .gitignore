@@ -72,11 +72,8 @@ app.*.map.json
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
 
-# macOS related
-**/macos/Flutter/GeneratedPluginRegistrant.swift
-
-# Coverage
-coverage/
+# Web related
+lib/generated_plugin_registrant.dart
 
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
@@ -84,14 +81,19 @@ coverage/
 !**/ios/**/default.pbxuser
 !**/ios/**/default.perspectivev3
 
-# Web related
-lib/generated_plugin_registrant.dart
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Windows related
-**/windows/flutter/generated_plugin_registrant.cc
-**/windows/flutter/generated_plugin_registrant.h
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
 
-# Linux related
-**/linux/flutter/generated_plugin_registrant.cc
-**/linux/flutter/generated_plugin_registrant.h
+# Linux
+*~
 
+# Temporary files
+*.tmp
+*.temp

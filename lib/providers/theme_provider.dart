@@ -8,7 +8,7 @@ class ThemeProvider extends ChangeNotifier {
   String? _customBackgroundPath;
   bool _useCustomBackground = false;
 
-  // Getters optimizados
+  // Getters
   bool get isDarkMode => _isDarkMode;
   String? get customBackgroundPath => _customBackgroundPath;
   bool get useCustomBackground => _useCustomBackground;
@@ -140,7 +140,9 @@ class ThemeProvider extends ChangeNotifier {
     scaffoldBackgroundColor: Colors.black,
     canvasColor: Colors.black,
     cardColor: const Color(0xFF1A1A1A),
-    dialogBackgroundColor: const Color(0xFF1A1A1A),
+    dialogTheme: const DialogThemeData(
+      backgroundColor: Color(0xFF1A1A1A),
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.black,
       foregroundColor: Colors.white,

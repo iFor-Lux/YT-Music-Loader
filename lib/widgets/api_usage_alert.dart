@@ -11,44 +11,14 @@ class ApiUsageAlert extends StatefulWidget {
   State<ApiUsageAlert> createState() => _ApiUsageAlertState();
 }
 
-class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
+class _ApiUsageAlertState extends State<ApiUsageAlert> {
   final ApiUsageService _apiService = ApiUsageService();
   bool _isVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.elasticOut,
-    ));
-    
-    _opacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    
     _checkUsageAndShowAlert();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
   }
 
   void _checkUsageAndShowAlert() {
@@ -56,7 +26,6 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
       setState(() {
         _isVisible = true;
       });
-      _animationController.forward();
     }
   }
 
@@ -66,14 +35,7 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
     
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        return AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _scaleAnimation.value,
-              child: Opacity(
-                opacity: _opacityAnimation.value,
-                child: Container(
+        return Container(
                   margin: const EdgeInsets.all(16),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
@@ -85,23 +47,23 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.orange.withOpacity(0.9),
-                              Colors.red.withOpacity(0.8),
+                              Colors.orange.withValues(alpha:0.9),
+                              Colors.red.withValues(alpha:0.8),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha:0.3),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.orange.withOpacity(0.3),
+                              color: Colors.orange.withValues(alpha:0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
                             BoxShadow(
-                              color: Colors.red.withOpacity(0.2),
+                              color: Colors.red.withValues(alpha:0.2),
                               blurRadius: 40,
                               offset: const Offset(0, 16),
                             ),
@@ -116,7 +78,7 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha:0.2),
                                   borderRadius: BorderRadius.circular(50),
                                 ),
                                 child: const Icon(
@@ -128,7 +90,7 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                               const SizedBox(height: 16),
                               
                               // Título
-                              Text(
+                              const Text(
                                 'Alerta de Uso de API',
                                 style: TextStyle(
                                   fontSize: 20,
@@ -144,7 +106,7 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: Colors.white.withValues(alpha:0.9),
                                   height: 1.4,
                                 ),
                               ),
@@ -155,7 +117,7 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                                 height: 8,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(4),
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: Colors.white.withValues(alpha:0.3),
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(4),
@@ -180,7 +142,7 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                                   _buildStatItem(
                                     'Restante',
                                     '${_apiService.remainingQuota}',
-                                    Colors.white.withOpacity(0.8),
+                                    Colors.white.withValues(alpha:0.8),
                                   ),
                                 ],
                               ),
@@ -195,10 +157,9 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                                         setState(() {
                                           _isVisible = false;
                                         });
-                                        _animationController.reverse();
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white.withOpacity(0.2),
+                                        backgroundColor: Colors.white.withValues(alpha:0.2),
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12),
@@ -232,11 +193,7 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
                       ),
                     ),
                   ),
-                ),
-              ),
-            );
-          },
-        );
+                );
       },
     );
   }
@@ -256,11 +213,12 @@ class _ApiUsageAlertState extends State<ApiUsageAlert> with TickerProviderStateM
           label,
           style: TextStyle(
             fontSize: 12,
-            color: color.withOpacity(0.8),
+            color: color.withValues(alpha:0.8),
           ),
         ),
       ],
     );
   }
 }
+
 

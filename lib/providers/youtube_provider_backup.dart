@@ -26,7 +26,7 @@ class YouTubeProvider extends ChangeNotifier {
   List<YouTubeVideo> _videos = [];
   List<YouTubeVideo> _recommendedVideos = [];
   List<YouTubeVideo> _selectedVideos = [];
-  List<DownloadTask> _downloadTasks = [];
+  final List<DownloadTask> _downloadTasks = [];
   
   String? _error;
   bool _isLoading = false;

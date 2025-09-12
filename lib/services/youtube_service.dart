@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:youtube_downloader_app/models/youtube_video.dart';
@@ -55,17 +54,15 @@ class YouTubeService {
       final randomCategory = categories[DateTime.now().millisecond % categories.length];
       
       
-      // Headers simples
-      final headers = _buildHeaders();
       
       final apiKey = await _resolveApiKey();
       if (apiKey == null) {
         throw Exception('API key no configurada. Configúrala en Ajustes.');
       }
-      final url = _appendKey('$_baseUrl/search?part=snippet&q=$randomCategory&type=video&order=viewCount&videoDuration=medium&maxResults=${maxResults * 2}', apiKey);
+      final url = _appendKey('$_baseUrl/search?part=snippet&q=$randomCategory&type=video&order=viewCount&videoDuration=medium&maxResults=${maxResults * 3}', apiKey);
       // Debug seguro
       // ignore: avoid_print
-      print('[YT getRecommended] usingKey=${apiKey.substring(0, 4)}*** len=${apiKey.length} urlHasKey=${url.contains('key=')}');
+
       
       // Usar búsqueda por categoría con filtros para excluir shorts
       final response = await http.get(
@@ -103,11 +100,9 @@ class YouTubeService {
           videos.first = videos.first.copyWith(nextPageToken: nextPageToken);
         }
         
-        // Filtro adicional: excluir títulos que sugieran Shorts
-        videos = videos.where((video) {
-          final title = (video.title ?? '').toLowerCase();
-          return !(title.contains('shorts') || title.contains('#shorts'));
-        }).toList();
+        // Filtro adicional: excluir títulos que sugieran Shorts o contenido no deseado
+        // Sin filtrado adicional para obtener máximo de resultados
+        // videos = videos; // Mantener todos los videos
         
         // Limitar al número solicitado
         if (videos.length > maxResults) {
@@ -118,7 +113,7 @@ class YouTubeService {
       } else {
         // Log detallado
         // ignore: avoid_print
-        print('[YT getRecommended] HTTP ${response.statusCode}: ${response.body}');
+
         // Manejo explícito de errores de API
         if (response.statusCode == 403) {
           try {
@@ -259,8 +254,6 @@ class YouTubeService {
       
       final randomQuery = fallbackQueries[DateTime.now().millisecond % fallbackQueries.length];
       
-      // Headers simples
-      final headers = _buildHeaders();
       
       final apiKey = await _resolveApiKey();
       if (apiKey == null) {
@@ -268,7 +261,7 @@ class YouTubeService {
       }
       final url = _appendKey('$_baseUrl/search?part=snippet&q=$randomQuery&type=video&order=relevance&videoDuration=medium&maxResults=$maxResults', apiKey);
       // ignore: avoid_print
-      print('[YT fallback] usingKey=${apiKey.substring(0, 4)}*** len=${apiKey.length} urlHasKey=${url.contains('key=')}');
+
       
       final response = await http.get(
         Uri.parse(url),
@@ -285,7 +278,7 @@ class YouTubeService {
         return items.map((item) => YouTubeVideo.fromJson(item)).toList();
       } else {
         // ignore: avoid_print
-        print('[YT fallback] HTTP ${response.statusCode}: ${response.body}');
+
         if (response.statusCode == 403) {
           try {
             final err = json.decode(response.body);
@@ -310,23 +303,25 @@ class YouTubeService {
         return _searchCache[query]!;
       }
 
-      // Filtrar shorts y gaming - agregar términos de exclusión
-      final filteredQuery = '$query -shorts -#shorts -gaming -#gaming -gameplay -#gameplay';
+      // Usar query original sin filtros para obtener más resultados
+      final filteredQuery = query;
       
       final apiKey = await _resolveApiKey();
       if (apiKey == null) {
         throw Exception('API key no configurada. Configúrala en Ajustes.');
       }
-      // Excluir Shorts: usar duración media por defecto
-      String url = _appendKey('$_baseUrl/search?part=snippet&q=$filteredQuery&type=video&maxResults=$maxResults&videoDuration=medium', apiKey);
+      
+      // Solicitar exactamente lo que necesitamos para optimizar tokens
+      final requestedResults = maxResults; // Solicitar solo lo necesario (20 tokens)
+      
+      // Excluir Shorts: sin restricción de duración para obtener más resultados
+      String url = _appendKey('$_baseUrl/search?part=snippet&q=$filteredQuery&type=video&maxResults=$requestedResults&order=relevance', apiKey);
       if (pageToken != null) {
         url += '&pageToken=$pageToken';
       }
       // ignore: avoid_print
-      print('[YT search] usingKey=${apiKey.substring(0, 4)}*** len=${apiKey.length} urlHasKey=${url.contains('key=')}');
 
-      // Headers simples
-      final headers = _buildHeaders();
+
 
       final response = await http.get(Uri.parse(url), headers: _headersWithKey(apiKey)).timeout(const Duration(seconds: 15));
 
@@ -339,6 +334,10 @@ class YouTubeService {
         final items = data['items'] as List;
         final nextPageToken = data['nextPageToken'];
         
+        // ignore: avoid_print
+
+        // Comentado para mejor rendimiento - solo activar si necesitas debug
+
         
         // Procesar videos directamente sin información adicional para mejor rendimiento
         var videos = items.map((item) {
@@ -356,10 +355,22 @@ class YouTubeService {
           );
         }).where((video) => video != null).cast<YouTubeVideo>().toList();
         
+        // Filtro adicional: excluir títulos que sugieran Shorts o contenido no deseado
+        // Sin filtrado adicional para obtener máximo de resultados
+        // videos = videos; // Mantener todos los videos
+        
+        // Limitar al número solicitado
+        if (videos.length > maxResults) {
+          videos = videos.take(maxResults).toList();
+        }
+        
         // Agregar el token de la siguiente página al primer video para facilitar la paginación
         if (videos.isNotEmpty && nextPageToken != null) {
           videos.first = videos.first.copyWith(nextPageToken: nextPageToken);
         }
+        
+        // ignore: avoid_print
+
         
         // Guardar en cache solo para búsquedas sin paginación
         if (pageToken == null) {
@@ -369,7 +380,7 @@ class YouTubeService {
         return videos;
       } else {
         // ignore: avoid_print
-        print('[YT search] HTTP ${response.statusCode}: ${response.body}');
+
         if (response.statusCode == 403) {
           try {
             final err = json.decode(response.body);
@@ -397,56 +408,6 @@ class YouTubeService {
     }
   }
 
-  Future<YouTubeVideo?> _getVideoInfoCached(String videoId) async {
-    // Validar que el videoId no esté vacío
-    if (videoId.isEmpty) {
-      return null;
-    }
-    
-    if (_videoInfoCache.containsKey(videoId)) {
-      final cached = _videoInfoCache[videoId]!;
-      return YouTubeVideo(
-        id: videoId,
-        title: cached['title'],
-        channelTitle: cached['channelTitle'],
-        thumbnail: cached['thumbnail'],
-        duration: cached['duration'],
-        viewCount: cached['viewCount'],
-        publishedAt: cached['publishedAt'],
-      );
-    }
-
-    try {
-      final yt = YoutubeExplode();
-      final video = await yt.videos.get(videoId);
-      
-             final videoInfo = YouTubeVideo(
-         id: videoId,
-         title: video.title,
-         channelTitle: video.author,
-         thumbnail: video.thumbnails.highResUrl,
-         duration: _formatDuration(video.duration ?? Duration.zero),
-         viewCount: video.engagement.viewCount,
-         publishedAt: (video.uploadDate ?? DateTime.now()).toIso8601String(),
-       );
-
-             // Guardar en cache
-       _videoInfoCache[videoId] = {
-         'title': video.title,
-         'channelTitle': video.author,
-         'thumbnail': video.thumbnails.highResUrl,
-         'duration': _formatDuration(video.duration ?? Duration.zero),
-         'viewCount': video.engagement.viewCount,
-         'publishedAt': (video.uploadDate ?? DateTime.now()).toIso8601String(),
-       };
-
-      yt.close();
-      return videoInfo;
-    } catch (e) {
-      // print('Error obteniendo información del video $videoId: $e');
-      return null;
-    }
-  }
 
   Future<String?> getAudioUrl(String videoId) async {
     try {
@@ -482,7 +443,7 @@ class YouTubeService {
       
       return url;
     } catch (e) {
-      // print('Error obteniendo URL del stream de audio: $e');
+
       return null;
     }
   }
@@ -496,7 +457,7 @@ class YouTubeService {
       yt.close();
       return audioStream.url.toString();
     } catch (e) {
-      // print('Error obteniendo URL del stream de audio: $e');
+
       return null;
     }
   }
@@ -510,7 +471,7 @@ class YouTubeService {
       yt.close();
       return videoStream.url.toString();
     } catch (e) {
-      // print('Error obteniendo URL del stream de video: $e');
+
       return null;
     }
   }
@@ -524,7 +485,7 @@ class YouTubeService {
       yt.close();
       return thumbnailUrl;
     } catch (e) {
-      // print('Error obteniendo URL de la miniatura: $e');
+
       return null;
     }
   }
@@ -533,21 +494,15 @@ class YouTubeService {
     try {
       // Implementación básica de búsqueda de letras
       // En el futuro, se puede integrar con APIs como Musixmatch o Genius
-      final searchQuery = '$title $artist lyrics';
       
       // Por ahora, retornar letras de ejemplo
       return _generateSampleLyrics(title, artist);
     } catch (e) {
-      // print('Error buscando letras: $e');
+
       return null;
     }
   }
 
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    return '${minutes}:${seconds.toString().padLeft(2, '0')}';
-  }
 
   String _generateSampleLyrics(String title, String artist) {
     // Generar letras de ejemplo basadas en el título y artista
@@ -585,56 +540,4 @@ class YouTubeService {
     clearCache();
   }
 
-  // Método para obtener videos de ejemplo
-  List<YouTubeVideo> _getSampleVideos(int maxResults) {
-    final sampleVideos = [
-      YouTubeVideo(
-        id: 'dQw4w9WgXcQ',
-        title: 'Never Gonna Give You Up - Rick Astley',
-        thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
-        channelTitle: 'Rick Astley',
-        publishedAt: '2023-01-01T00:00:00Z',
-        duration: '3:33',
-        viewCount: 1000000000,
-      ),
-      YouTubeVideo(
-        id: 'kJQP7kiw5Fk',
-        title: 'Despacito - Luis Fonsi ft. Daddy Yankee',
-        thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/maxresdefault.jpg',
-        channelTitle: 'Luis Fonsi',
-        publishedAt: '2023-01-01T00:00:00Z',
-        duration: '4:41',
-        viewCount: 7000000000,
-      ),
-      YouTubeVideo(
-        id: '9bZkp7q19f0',
-        title: 'PSY - GANGNAM STYLE',
-        thumbnail: 'https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg',
-        channelTitle: 'officialpsy',
-        publishedAt: '2023-01-01T00:00:00Z',
-        duration: '4:12',
-        viewCount: 4000000000,
-      ),
-      YouTubeVideo(
-        id: 'YQHsXMglC9A',
-        title: 'Hello - Adele',
-        thumbnail: 'https://img.youtube.com/vi/YQHsXMglC9A/maxresdefault.jpg',
-        channelTitle: 'Adele',
-        publishedAt: '2023-01-01T00:00:00Z',
-        duration: '5:00',
-        viewCount: 3000000000,
-      ),
-      YouTubeVideo(
-        id: 'hT_nvWreIhg',
-        title: 'The Weeknd - Blinding Lights',
-        thumbnail: 'https://img.youtube.com/vi/hT_nvWreIhg/maxresdefault.jpg',
-        channelTitle: 'The Weeknd',
-        publishedAt: '2023-01-01T00:00:00Z',
-        duration: '3:20',
-        viewCount: 2000000000,
-      ),
-    ];
-
-    return sampleVideos.take(maxResults).toList();
-  }
 }

@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:youtube_downloader_app/providers/theme_provider.dart';
 import 'package:youtube_downloader_app/services/api_usage_service.dart';
+import 'package:youtube_downloader_app/widgets/no_bounce_scroll_behavior.dart';
 import 'dart:ui';
 
 class NoGlowBehavior extends ScrollBehavior {
   @override
   Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
     return child;
+  }
+  
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics(); // Scroll normal sin rebote
   }
 }
 
@@ -44,24 +50,36 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
                   // Header simple
                   _buildHeader(themeProvider),
                   
-                  // Contenido con scroll controlado - Igual que configuraciones
+                  // Contenido con scroll controlado - Sin rebote
                   Expanded(
-                    child: ScrollConfiguration(
-                      behavior: NoGlowBehavior(),
-                      child: ListView(
-                        physics: const BouncingScrollPhysics(), // Física más fluida
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100), // Padding bottom para el navbar
-                        children: [
-                          _buildUsageCard(themeProvider),
-                          const SizedBox(height: 16),
-                          _buildStatisticsCard(themeProvider),
-                          const SizedBox(height: 16),
-                          _buildHistoryCard(themeProvider),
-                          const SizedBox(height: 16),
-                          _buildInfoCard(themeProvider),
-                          const SizedBox(height: 16),
-                        ],
-                      ),
+                    child: NoBounceListView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                      cacheExtent: 200,
+                      addAutomaticKeepAlives: false,
+                      addRepaintBoundaries: true,
+                      addSemanticIndexes: false,
+                      children: [
+                        RepaintBoundary(
+                          key: const ValueKey('usage_card'),
+                          child: _buildUsageCard(themeProvider),
+                        ),
+                        const SizedBox(height: 16),
+                        RepaintBoundary(
+                          key: const ValueKey('statistics_card'),
+                          child: _buildStatisticsCard(themeProvider),
+                        ),
+                        const SizedBox(height: 16),
+                        RepaintBoundary(
+                          key: const ValueKey('history_card'),
+                          child: _buildHistoryCard(themeProvider),
+                        ),
+                        const SizedBox(height: 16),
+                        RepaintBoundary(
+                          key: const ValueKey('info_card'),
+                          child: _buildInfoCard(themeProvider),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ),
                   ),
                 ],
@@ -87,17 +105,17 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
                 end: Alignment.bottomRight,
                 colors: themeProvider.isDarkMode 
                     ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
+                        Colors.black.withValues(alpha:0.6),
+                        Colors.black.withValues(alpha:0.4),
                       ]
                     : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
+                        Colors.white.withValues(alpha:0.7),
+                        Colors.white.withValues(alpha:0.5),
                       ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha:0.2),
                 width: 1.5,
               ),
             ),
@@ -111,8 +129,8 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: themeProvider.isDarkMode 
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.1),
+                          ? Colors.white.withValues(alpha:0.1)
+                          : Colors.black.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -141,18 +159,18 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
                       end: Alignment.bottomRight,
                       colors: _apiService.isNearLimit
                           ? [
-                              Colors.orange.withOpacity(0.8),
+                              Colors.orange.withValues(alpha:0.8),
                               Colors.red[600]!,
                             ]
                           : [
-                              Colors.green.withOpacity(0.8),
+                              Colors.green.withValues(alpha:0.8),
                               Colors.green[600]!,
                             ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: (_apiService.isNearLimit ? Colors.orange : Colors.green).withOpacity(0.3),
+                        color: (_apiService.isNearLimit ? Colors.orange : Colors.green).withValues(alpha:0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -177,9 +195,9 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
 
   Widget _buildUsageCard(ThemeProvider themeProvider) {
     final stats = _apiService.getStatistics();
-    final usagePercentage = stats['usagePercentage'] as double;
-    final currentUsage = stats['currentUsage'] as int;
-    final remainingQuota = stats['remainingQuota'] as int;
+    final usagePercentage = (stats['usagePercentage'] as num?)?.toDouble() ?? 0.0;
+    final currentUsage = (stats['currentUsage'] as num?)?.toInt() ?? 0;
+    final remainingQuota = (stats['remainingQuota'] as num?)?.toInt() ?? 0;
     final isNearLimit = stats['isNearLimit'] as bool;
     final isOverLimit = stats['isOverLimit'] as bool;
 
@@ -289,13 +307,13 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isOverLimit 
-                    ? Colors.red.withOpacity(0.1)
-                    : Colors.orange.withOpacity(0.1),
+                    ? Colors.red.withValues(alpha:0.1)
+                    : Colors.orange.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isOverLimit 
-                      ? Colors.red.withOpacity(0.3)
-                      : Colors.orange.withOpacity(0.3),
+                      ? Colors.red.withValues(alpha:0.3)
+                      : Colors.orange.withValues(alpha:0.3),
                   width: 1,
                 ),
               ),
@@ -342,17 +360,17 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
                 end: Alignment.bottomRight,
                 colors: themeProvider.isDarkMode 
                     ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
+                        Colors.black.withValues(alpha:0.6),
+                        Colors.black.withValues(alpha:0.4),
                       ]
                     : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
+                        Colors.white.withValues(alpha:0.7),
+                        Colors.white.withValues(alpha:0.5),
                       ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha:0.2),
                 width: 1.5,
               ),
             ),
@@ -371,11 +389,11 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: themeProvider.isDarkMode 
-            ? Colors.grey[900]?.withOpacity(0.5)
-            : Colors.grey[100]?.withOpacity(0.5),
+            ? Colors.grey[900]?.withValues(alpha:0.5)
+            : Colors.grey[100]?.withValues(alpha:0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha:0.3),
           width: 1,
         ),
       ),
@@ -406,10 +424,10 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
 
   Widget _buildStatisticsCard(ThemeProvider themeProvider) {
     final stats = _apiService.getStatistics();
-    final avgDailyUsage = stats['averageDailyUsage'] as double;
-    final maxDailyUsage = stats['maxDailyUsage'] as int;
-    final daysOver80 = stats['daysOver80'] as int;
-    final totalDays = stats['totalDays'] as int;
+    final avgDailyUsage = (stats['averageDailyUsage'] as num?)?.toDouble() ?? 0.0;
+    final maxDailyUsage = (stats['maxDailyUsage'] as num?)?.toInt() ?? 0;
+    final daysOver80 = (stats['daysOver80'] as num?)?.toInt() ?? 0;
+    final totalDays = (stats['totalDays'] as num?)?.toInt() ?? 0;
 
     return _buildCard(
       themeProvider,
@@ -528,7 +546,7 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
               ),
             )
           else
-            ...history.map((day) => _buildHistoryItem(day, themeProvider)).toList(),
+            ...history.map((day) => _buildHistoryItem(day, themeProvider)),
         ],
       ),
     );
@@ -536,8 +554,8 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
 
   Widget _buildHistoryItem(Map<String, dynamic> day, ThemeProvider themeProvider) {
     final date = DateTime.parse(day['date']);
-    final usage = day['usage'] as Map<String, int>;
-    final percentage = day['percentage'] as double;
+    final usage = Map<String, int>.from(day['usage'] ?? {});
+    final percentage = (day['percentage'] as num?)?.toDouble() ?? 0.0;
     final totalUsage = usage['total'] ?? 0;
 
     return Container(
@@ -545,8 +563,8 @@ class _ApiMetricsScreenState extends State<ApiMetricsScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: themeProvider.isDarkMode 
-            ? Colors.grey[900]?.withOpacity(0.5)
-            : Colors.grey[100]?.withOpacity(0.5),
+            ? Colors.grey[900]?.withValues(alpha:0.5)
+            : Colors.grey[100]?.withValues(alpha:0.5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(

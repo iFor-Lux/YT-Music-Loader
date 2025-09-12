@@ -5,12 +5,18 @@ import 'package:youtube_downloader_app/providers/youtube_provider.dart';
 import 'package:youtube_downloader_app/providers/theme_provider.dart';
 import 'package:youtube_downloader_app/widgets/download_item.dart';
 import 'package:youtube_downloader_app/models/youtube_video.dart';
-import 'package:glass_kit/glass_kit.dart';
+import 'package:youtube_downloader_app/widgets/glassmorph_card.dart';
+import 'package:youtube_downloader_app/widgets/no_bounce_scroll_behavior.dart';
 
 class NoGlowBehavior extends ScrollBehavior {
   @override
   Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) {
     return child;
+  }
+  
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) {
+    return const ClampingScrollPhysics(); // Scroll normal sin rebote
   }
 }
 
@@ -22,7 +28,6 @@ class DownloadScreen extends StatefulWidget {
 }
 
 class _DownloadScreenState extends State<DownloadScreen> {
-  bool _isSelectedVideosExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -79,54 +84,25 @@ class _DownloadScreenState extends State<DownloadScreen> {
   }
 
   Widget _buildHeader(ThemeProvider themeProvider) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: themeProvider.isDarkMode 
-                    ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
-                      ]
-                    : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
-                      ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
-              ),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.download, 
-                  color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Descargas',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
-              ],
+    return GlassmorphHeader(
+      isDarkMode: themeProvider.isDarkMode,
+      child: Row(
+        children: [
+          Icon(
+            Icons.download, 
+            color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Descargas',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: themeProvider.isDarkMode ? Colors.white : Colors.black,
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -137,87 +113,46 @@ class _DownloadScreenState extends State<DownloadScreen> {
     final completedTasks = provider.completedTasks;
     final failedTasks = provider.failedTasks;
 
-    return Container(
-      margin: const EdgeInsets.all(16),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: themeProvider.isDarkMode 
-                    ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
-                      ]
-                    : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
-                      ],
+    return GlassmorphStatCard(
+      isDarkMode: themeProvider.isDarkMode,
+      child: Column(
+        children: [
+          // Título de estadísticas
+          Row(
+            children: [
+              Icon(
+                Icons.analytics,
+                color: Colors.blue[400],
+                size: 16,
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
+              const SizedBox(width: 6),
+              const Text(
+                'Estadísticas de Descarga',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.white.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, -8),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                // Título de estadísticas
-                Row(
-                  children: [
-                    Icon(
-                      Icons.analytics,
-                      color: Colors.blue[400],
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Estadísticas de Descarga',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Estadísticas en horizontal
-                Row(
-                  children: [
-                    Expanded(child: _buildStatCard('Pendientes', pendingTasks.length, Colors.orange)),
-                    const SizedBox(width: 6),
-                    Expanded(child: _buildStatCard('Descargando', downloadingTasks.length, Colors.blue)),
-                    const SizedBox(width: 6),
-                    Expanded(child: _buildStatCard('Completadas', completedTasks.length, Colors.green)),
-                    const SizedBox(width: 6),
-                    Expanded(child: _buildStatCard('Fallidas', failedTasks.length, Colors.red)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Lista desplegable de videos seleccionados
-                _buildSelectedVideosList(provider, themeProvider),
-              ],
-            ),
+            ],
           ),
-        ),
+          const SizedBox(height: 12),
+          // Estadísticas en horizontal
+          Row(
+            children: [
+              Expanded(child: _buildStatCard('Pendientes', pendingTasks.length, Colors.orange)),
+              const SizedBox(width: 6),
+              Expanded(child: _buildStatCard('Descargando', downloadingTasks.length, Colors.blue)),
+              const SizedBox(width: 6),
+              Expanded(child: _buildStatCard('Completadas', completedTasks.length, Colors.green)),
+              const SizedBox(width: 6),
+              Expanded(child: _buildStatCard('Fallidas', failedTasks.length, Colors.red)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Lista desplegable de videos seleccionados
+          _buildSelectedVideosList(provider, themeProvider),
+        ],
       ),
     );
   }
@@ -230,18 +165,18 @@ class _DownloadScreenState extends State<DownloadScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withOpacity(0.12),
-            color.withOpacity(0.06),
+            color.withValues(alpha:0.12),
+            color.withValues(alpha:0.06),
           ],
         ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha:0.2),
           width: 0.8,
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha:0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -282,13 +217,13 @@ class _DownloadScreenState extends State<DownloadScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.blue.withOpacity(0.1),
-            Colors.blue.withOpacity(0.05),
+            Colors.blue.withValues(alpha:0.1),
+            Colors.blue.withValues(alpha:0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.2),
+          color: Colors.blue.withValues(alpha:0.2),
           width: 0.8,
         ),
       ),
@@ -349,29 +284,29 @@ class _DownloadScreenState extends State<DownloadScreen> {
                     end: Alignment.bottomRight,
                     colors: themeProvider.isDarkMode 
                         ? [
-                            Colors.black.withOpacity(0.6),
-                            Colors.black.withOpacity(0.4),
+                            Colors.black.withValues(alpha:0.6),
+                            Colors.black.withValues(alpha:0.4),
                           ]
                         : [
-                            Colors.white.withOpacity(0.7),
-                            Colors.white.withOpacity(0.5),
+                            Colors.white.withValues(alpha:0.7),
+                            Colors.white.withValues(alpha:0.5),
                           ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: themeProvider.isDarkMode 
-                        ? Colors.white.withOpacity(0.2)
-                        : Colors.black.withOpacity(0.1),
+                        ? Colors.white.withValues(alpha:0.2)
+                        : Colors.black.withValues(alpha:0.1),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha:0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
                     BoxShadow(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha:0.1),
                       blurRadius: 20,
                       offset: const Offset(0, -8),
                     ),
@@ -385,8 +320,8 @@ class _DownloadScreenState extends State<DownloadScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: themeProvider.isDarkMode 
-                            ? Colors.grey.withOpacity(0.4)
-                            : Colors.grey.withOpacity(0.2),
+                            ? Colors.grey.withValues(alpha:0.4)
+                            : Colors.grey.withValues(alpha:0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -433,21 +368,20 @@ class _DownloadScreenState extends State<DownloadScreen> {
       );
     }
 
-    return ScrollConfiguration(
-      behavior: NoGlowBehavior(),
-      child: ListView.builder(
-        physics: const BouncingScrollPhysics(), // Física más fluida
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100), // Padding bottom para el navbar
-        itemCount: provider.downloadTasks.length,
-        cacheExtent: 500,
-        addAutomaticKeepAlives: false,
-        addRepaintBoundaries: true,
-        addSemanticIndexes: false,
-        itemBuilder: (context, index) {
-          final task = provider.downloadTasks[index];
-          return DownloadItem(task: task);
-        },
-      ),
+    return NoBounceListViewBuilder(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+      itemCount: provider.downloadTasks.length,
+      cacheExtent: 150,
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
+      addSemanticIndexes: false,
+      itemBuilder: (context, index) {
+        final task = provider.downloadTasks[index];
+        return RepaintBoundary(
+          key: ValueKey(task.video.id),
+          child: DownloadItem(task: task),
+        );
+      },
     );
   }
 
@@ -459,174 +393,133 @@ class _DownloadScreenState extends State<DownloadScreen> {
       return const SizedBox.shrink();
     }
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8), // Blur optimizado
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: themeProvider.isDarkMode 
-                    ? [
-                        Colors.black.withOpacity(0.6),
-                        Colors.black.withOpacity(0.4),
-                      ]
-                    : [
-                        Colors.white.withOpacity(0.7),
-                        Colors.white.withOpacity(0.5),
-                      ],
+    return GlassmorphActionCard(
+      isDarkMode: themeProvider.isDarkMode,
+      child: Column(
+        children: [
+          // Título de acciones
+          Row(
+            children: [
+              Icon(
+                Icons.play_circle_fill,
+                color: Colors.green[400],
+                size: 20,
               ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
+              const SizedBox(width: 8),
+              const Text(
+                'Acciones de Descarga',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.white.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, -8),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-            child: Column(
-              children: [
-                // Título de acciones
-                Row(
-                  children: [
-                    Icon(
-                      Icons.play_circle_fill,
-                      color: Colors.green[400],
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Acciones de Descarga',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Botón único para iniciar todas las descargas pendientes
+          if (pendingTasks.isNotEmpty)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.blue.withValues(alpha:0.8),
+                      Colors.blue[600]!,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withValues(alpha:0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                // Botón único para iniciar todas las descargas pendientes
-                if (pendingTasks.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.blue.withOpacity(0.8),
-                            Colors.blue[600]!,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    for (final task in pendingTasks) {
+                      provider.retryDownload(task);
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Iniciando descarga de ${pendingTasks.length} videos'),
+                        backgroundColor: Colors.blue,
                       ),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          for (final task in pendingTasks) {
-                            provider.retryDownload(task);
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Iniciando descarga de ${pendingTasks.length} videos'),
-                              backgroundColor: Colors.blue,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.download, size: 22),
-                        label: Text(
-                          'Iniciar ${pendingTasks.length} descargas pendientes',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.download, size: 22),
+                  label: Text(
+                    'Iniciar ${pendingTasks.length} descargas pendientes',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-
-                // Botón para reintentar fallidas
-                if (failedTasks.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.orange.withOpacity(0.8),
-                            Colors.orange[600]!,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          for (final task in failedTasks) {
-                            provider.retryDownload(task);
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Reintentando ${failedTasks.length} descargas fallidas'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.refresh, size: 22),
-                        label: Text(
-                          'Reintentar ${failedTasks.length} descargas fallidas',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+                ),
+              ),
             ),
-          ),
-        ),
+
+          // Botón para reintentar fallidas
+          if (failedTasks.isNotEmpty)
+            SizedBox(
+              width: double.infinity,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.orange.withValues(alpha:0.8),
+                      Colors.orange[600]!,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withValues(alpha:0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    for (final task in failedTasks) {
+                      provider.retryDownload(task);
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Reintentando ${failedTasks.length} descargas fallidas'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.refresh, size: 22),
+                  label: Text(
+                    'Reintentar ${failedTasks.length} descargas fallidas',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -651,11 +544,11 @@ class _SelectedVideoItem extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: themeProvider.isDarkMode 
-            ? Colors.black.withOpacity(0.3)
-            : Colors.white.withOpacity(0.3),
+            ? Colors.black.withValues(alpha:0.3)
+            : Colors.white.withValues(alpha:0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.2),
+          color: Colors.blue.withValues(alpha:0.2),
           width: 0.5,
         ),
       ),
@@ -714,7 +607,7 @@ class _SelectedVideoItem extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.2),
+                color: Colors.red.withValues(alpha:0.2),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(

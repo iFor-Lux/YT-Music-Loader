@@ -26,7 +26,7 @@ class YouTubeProvider extends ChangeNotifier {
   List<YouTubeVideo> _videos = [];
   List<YouTubeVideo> _recommendedVideos = [];
   List<YouTubeVideo> _selectedVideos = [];
-  List<DownloadTask> _downloadTasks = [];
+  final List<DownloadTask> _downloadTasks = [];
   
   String? _error;
   bool _isLoading = false;
@@ -130,26 +130,14 @@ class YouTubeProvider extends ChangeNotifier {
   }
 
   void toggleVideoSelection(YouTubeVideo video) {
-    print('🔍 DEBUG: toggleVideoSelection called for video: ${video.title}');
-    print('🔍 DEBUG: _selectedVideos before: ${_selectedVideos.length}');
-    print('🔍 DEBUG: _videos length: ${_videos.length}');
-    print('🔍 DEBUG: _recommendedVideos length: ${_recommendedVideos.length}');
-    print('🔍 DEBUG: _isLoading: $_isLoading');
-    print('🔍 DEBUG: _error: $_error');
-    
     final index = _selectedVideos.indexWhere((v) => v.id == video.id);
     if (index != -1) {
-      print('🔍 DEBUG: Removing video from selection');
       _selectedVideos.removeAt(index);
     } else {
-      print('🔍 DEBUG: Adding video to selection');
       _selectedVideos.add(video);
     }
     
-    print('🔍 DEBUG: _selectedVideos after: ${_selectedVideos.length}');
-    print('🔍 DEBUG: Calling notifyListeners()');
     notifyListeners();
-    print('🔍 DEBUG: notifyListeners() completed');
   }
 
   void selectAllVideos() {

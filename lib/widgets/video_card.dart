@@ -32,7 +32,7 @@ class VideoCard extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: isSelected ? Colors.red.withOpacity(0.05) : null,
+            color: isSelected ? Colors.red.withValues(alpha: 0.05) : null,
           ),
           child: Row(
             children: [
@@ -72,7 +72,7 @@ class VideoCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -177,9 +177,9 @@ class VideoCard extends StatelessWidget {
                 Container(
                   width: 4,
                   height: double.infinity,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.red,
-                    borderRadius: const BorderRadius.only(
+                    borderRadius: BorderRadius.only(
                       topRight: Radius.circular(8),
                       bottomRight: Radius.circular(8),
                     ),

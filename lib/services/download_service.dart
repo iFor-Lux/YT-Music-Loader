@@ -1,12 +1,9 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 
@@ -109,7 +106,7 @@ class DownloadService {
         Permission.videos,
       ];
       
-      Map<Permission, PermissionStatus> statuses = {};
+      final Map<Permission, PermissionStatus> statuses = {};
       
       for (Permission permission in permissions) {
         try {
@@ -137,7 +134,7 @@ class DownloadService {
       
       if (customPath != null && await Directory(customPath).exists()) {
         // Crear subcarpeta para YouTube Downloads si no existe
-        final youtubeDir = Directory('$customPath/YouTube_Downloads');
+        final youtubeDir = Directory('$customPath/Luxury Music');
         if (!await youtubeDir.exists()) {
           await youtubeDir.create(recursive: true);
         }
@@ -156,7 +153,7 @@ class DownloadService {
       }
       
       if (directory != null) {
-        final musicDir = Directory('${directory.path}/YouTube_Downloads');
+        final musicDir = Directory('${directory.path}/Luxury Music');
         if (!await musicDir.exists()) {
           await musicDir.create(recursive: true);
         }
@@ -191,7 +188,7 @@ class DownloadService {
           final dir = Directory(result);
           if (await dir.exists()) {
             // Crear subcarpeta para YouTube Downloads
-            final youtubeDir = Directory('$result/YouTube_Downloads');
+            final youtubeDir = Directory('$result/Luxury Music');
             if (!await youtubeDir.exists()) {
               await youtubeDir.create(recursive: true);
             }
@@ -341,7 +338,7 @@ class DownloadService {
         String newFilePath = filePath;
         while (await File(newFilePath).exists()) {
           final nameWithoutExt = safeFileName;
-          newFilePath = '$downloadDir/${nameWithoutExt} $counter.mp3';
+          newFilePath = '$downloadDir/$nameWithoutExt $counter.mp3';
           counter++;
         }
         final file = File(newFilePath);
@@ -528,7 +525,7 @@ class DownloadService {
 
   // Obtener directorios disponibles en Android (MEJORADO)
   static Future<List<String>> getAvailableDirectories() async {
-    List<String> directories = [];
+    final List<String> directories = [];
     
     if (Platform.isAndroid) {
       // print('🔍 DEBUG: Scanning available directories...');
@@ -757,7 +754,7 @@ class DownloadService {
           final fullPath = entity.path;
           
           // Verificar si coincide con algún patrón de SD card
-          bool isSDCard = patterns.any((pattern) => 
+          final bool isSDCard = patterns.any((pattern) => 
             dirName.toLowerCase().contains(pattern.toLowerCase())
           );
           
@@ -795,33 +792,7 @@ class DownloadService {
   }
 
   // REFRESCAR URL DE YOUTUBE SI HA EXPIRADO
-  static Future<String?> _refreshYouTubeUrl(String url, String videoId) async {
-    try {
-      // Si la URL contiene parámetros de expiración, intentar obtener una nueva
-      if (url.contains('expire=') || url.contains('googlevideo.com')) {
-        // print('🔍 DEBUG: Attempting to refresh YouTube URL for video $videoId');
-        
-        // Aquí podrías implementar la lógica para obtener una nueva URL
-        // Por ahora, retornamos la URL original
-        return url;
-      }
-      return url;
-    } catch (e) {
-      // print('🔍 DEBUG: Error refreshing YouTube URL: $e');
-      return url;
-    }
-  }
 
-  // VERIFICAR CONECTIVIDAD
-  static Future<bool> _checkConnectivity() async {
-    try {
-      final response = await http.get(Uri.parse('https://www.google.com')).timeout(const Duration(seconds: 5));
-      return response.statusCode == 200;
-    } catch (e) {
-      // print('🔍 DEBUG: Connectivity check failed: $e');
-      return false;
-    }
-  }
 
   // VERIFICAR INTEGRIDAD DEL ARCHIVO
   static Future<bool> _verifyFileIntegrity(File file) async {
